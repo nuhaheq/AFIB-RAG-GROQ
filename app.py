@@ -67,7 +67,36 @@ def get_section_name(metadata: dict) -> str:
     return "General"
 
 
-loaded_vectorstores = setup_and_load_faiss()
+@st.cache_resource
+def setup_and_load_faiss():
+    """Ekstrak fail ZIP (jika ada) DAN imbas semua folder terus untuk cari index.faiss."""
+    # 1. Ekstrak mana-mana fail .zip jika wujud
+    zip_files = [f for f in os.listdir('.') if f.endswith('.zip')]
+    for z_file in zip_files:
+        folder_name = z_file.replace('.zip', '').split(' ')[0]
+        if not os.path.exists(folder_name):
+            try:
+                with zipfile.ZipFile(z_file, 'r') as zip_ref:
+                    zip_ref.extractall(folder_name)
+            except Exception as e:
+                st.warning(f"Gagal ekstrak {z_file}: {e}")
+
+    embedding_model = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-mpnet-base-v2",
+        model_kwargs={'device': 'cpu'}
+    )
+
+    vectorstores = []
+    # 2. Imbas SELURUH direktori projek untuk mana-mana folder yang mengandungi 'index.faiss'
+    for root, dirs, filenames in os.walk('.'):
+        if "index.faiss" in filenames:
+            try:
+                db = FAISS.load_local(root, embedding_model, allow_dangerous_deserialization=True)
+                vectorstores.append(db)
+            except Exception as e:
+                st.warning(f"Gagal load FAISS dari {root}: {e}")
+
+    return vectorstores
 
 if not loaded_vectorstores:
     st.error("Tiada FAISS vectorstore berjaya dimuatkan. Semak fail ZIP dalam repo ini.")
