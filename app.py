@@ -179,7 +179,7 @@ ANSWER:
                 api_key = st.secrets["GROQ_API_KEY"]
                 client = Groq(api_key=api_key)
                 completion = client.chat.completions.create(
-                    model="llama-3.1-70b-versatile",  # tukar sini kalau nak model Groq lain
+                    model="qwen/qwen3.6-27b",  # tukar sini kalau nak model Groq lain
                     messages=[{"role": "user", "content": system_prompt}],
                 )
                 answer_text = completion.choices[0].message.content
