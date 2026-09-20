@@ -175,8 +175,9 @@ Provide a Markdown table summarizing all guidelines cited:
 USER QUERY: {user_query}
 ANSWER:
 """
+                
 #TUKAR SINI FOR GROQ MODEL
-api_key = st.secrets["GROQ_API_KEY"]
+                api_key = st.secrets["GROQ_API_KEY"]
                 client = Groq(api_key=api_key)
                 
                 # Senarai model Groq mengikut keutamaan (dengan fallback)
