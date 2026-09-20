@@ -3,9 +3,14 @@ import zipfile
 from datetime import datetime
 import pandas as pd
 import streamlit as st
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
 from groq import Groq
+from langchain_community.vectorstores import FAISS
+
+# Flexible import untuk elakkan ModuleNotFoundError
+try:
+    from langchain_huggingface import HuggingFaceEmbeddings
+except ImportError:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
 
 st.set_page_config(page_title="AFib Clinical Decision Support", layout="wide")
 st.title("Retrieval Augmented Generation-Based Clinical Decision Support System for Anticoagulation in Atrial Fibrillation")
