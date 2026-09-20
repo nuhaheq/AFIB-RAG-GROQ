@@ -8,14 +8,13 @@
 # load dengan langchain<0.2.0/pydantic<2.0 gagal KeyError. Jadi kekalkan
 # versi terkini di sini, JANGAN pin lama.
 
-streamlit>=1.32,<2.0
-
-langchain
-langchain-community
-langchain-core
-
+streamlit
+pandas
 faiss-cpu
 sentence-transformers
-
-groq>=0.11.0
-pandas
+groq
+pydantic>=2.7.0
+langchain>=0.2.0
+langchain-core>=0.2.0
+langchain-community>=0.2.0
+langchain-huggingface>=0.0.1
