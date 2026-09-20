@@ -3,11 +3,6 @@ import zipfile
 from datetime import datetime
 import pandas as pd
 import streamlit as st
-# Import HuggingFaceEmbeddings secara selamat (Fallback antara langchain_huggingface dan langchain_community)
-try:
-    from langchain_huggingface import HuggingFaceEmbeddings
-except ImportError:
-    from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from groq import Groq
 
