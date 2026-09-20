@@ -7,7 +7,6 @@
 # TERKINI (bukan lama) -- disahkan bila load tanpa pin lama berjaya, tapi
 # load dengan langchain<0.2.0/pydantic<2.0 gagal KeyError. Jadi kekalkan
 # versi terkini di sini, JANGAN pin lama.
-
 streamlit
 pandas
 faiss-cpu
