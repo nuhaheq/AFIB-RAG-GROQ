@@ -209,6 +209,7 @@ ANSWER:
 # ==================================================
 # Log Q&A Sesi Ini (untuk RAGAS / dataset penyelidikan)
 # ==================================================
+
 if st.session_state.qa_log:
     st.divider()
     st.subheader(f"📊 Log Soalan & Jawapan Sesi Ini ({len(st.session_state.qa_log)} rekod)")
