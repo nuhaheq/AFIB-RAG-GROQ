@@ -1,0 +1,21 @@
+# requirements-locked.txt
+# GUNA FAIL NI DI DUA TEMPAT: Colab (bina FAISS) DAN Streamlit (deploy app).
+# Jangan biarkan dua tempat guna set versi berbeza -- itu punca sebenar
+# semua masalah pickle/incompatibility yang kita alami sebelum ni.
+#
+# NOTA: fail ZIP FAISS asal anda dipickle guna langchain/pydantic versi
+# TERKINI (bukan lama) -- disahkan bila load tanpa pin lama berjaya, tapi
+# load dengan langchain<0.2.0/pydantic<2.0 gagal KeyError. Jadi kekalkan
+# versi terkini di sini, JANGAN pin lama.
+
+streamlit>=1.32,<2.0
+
+langchain
+langchain-community
+langchain-core
+
+faiss-cpu
+sentence-transformers
+
+groq>=0.11.0
+pandas
