@@ -180,12 +180,12 @@ ANSWER:
                 api_key = st.secrets["GROQ_API_KEY"]
                 client = Groq(api_key=api_key)
                 
-                # Senarai model Groq mengikut keutamaan (dengan fallback)
+                # Senarai model Groq terkini yang disokong rasmi
                 candidate_models = [
                     "llama-3.3-70b-versatile",
-                    "llama3-70b-8192",
-                    "llama-3.1-70b-versatile",
-                    "mixtral-8x7b-32768"
+                    "llama-3.1-8b-instant",
+                    "openai/gpt-oss-120b",
+                    "openai/gpt-oss-20b"
                 ]
                 
                 answer_text = None
@@ -199,26 +199,13 @@ ANSWER:
                         )
                         answer_text = completion.choices[0].message.content
                         st.caption(f"🤖 Jawapan dijana menggunakan model: `{model_id}`")
-                        break  # Berjaya jana jawapan, keluar dari loop
+                        break  # Berjaya! Keluar dari loop
                     except Exception as err:
                         last_error = err
-                        continue  # Cuba model seterusnya jika model semasa 404 / error
+                        continue  # Cuba model seterusnya jika 400/404
                 
                 if not answer_text:
                     raise Exception(f"Gagal memanggil semua model Groq. Ralat terakhir: {last_error}")
-
-                # Simpan rekod ke log sesi (untuk RAGAS / analisis kemudian)
-                st.session_state.qa_log.append({
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "question": user_query,
-                    "rag_response": answer_text,
-                    "retrieved_contexts": " || ".join(doc.page_content for doc in top_docs),
-                    "ground_truth": "",  # isi manual kemudian dalam Excel/CSV
-                })
-
-            except Exception as e:
-                st.error(f"Ralat berlaku: {str(e)}")
-
 # ==================================================
 # Log Q&A Sesi Ini (untuk RAGAS / dataset penyelidikan)
 # ==================================================
