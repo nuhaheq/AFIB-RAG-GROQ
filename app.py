@@ -3,10 +3,17 @@ import zipfile
 from datetime import datetime
 import pandas as pd
 import streamlit as st
-from groq import Groq
+
+# Safe import untuk Groq
+try:
+    from groq import Groq
+except ImportError:
+    st.error("Pustaka 'groq' belum dipasang. Sila pastikan requirements.txt dibaca oleh Streamlit Cloud.")
+    st.stop()
+
 from langchain_community.vectorstores import FAISS
 
-# Flexible import untuk elakkan ModuleNotFoundError
+# Safe import untuk Hugging Face Embeddings
 try:
     from langchain_huggingface import HuggingFaceEmbeddings
 except ImportError:
