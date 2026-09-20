@@ -13,64 +13,13 @@ st.title("Retrieval Augmented Generation-Based Clinical Decision Support System 
 TOP_K_PER_STORE = 5   # calon per guideline SEBELUM re-rank global
 TOP_N_CONTEXT = 5      # bilangan chunk akhir yang dihantar ke LLM
 
-# Log Q&A dalam sesi ni — hilang bila page refresh/session tamat, jadi
-# download CSV SEBELUM tutup tab kalau nak simpan.
 if "qa_log" not in st.session_state:
     st.session_state.qa_log = []
 
 
 @st.cache_resource
 def setup_and_load_faiss():
-    """Ekstrak semua fail ZIP FAISS dan load setiap vectorstore."""
-    zip_files = [f for f in os.listdir('.') if f.endswith('.zip')]
-    extract_dirs = []
-    for z_file in zip_files:
-        folder_name = z_file.replace('.zip', '').split(' ')[0]
-        if not os.path.exists(folder_name):
-            with zipfile.ZipFile(z_file, 'r') as zip_ref:
-                zip_ref.extractall(folder_name)
-        extract_dirs.append(folder_name)
-
-    embedding_model = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-mpnet-base-v2",
-        model_kwargs={'device': 'cpu'}
-    )
-
-    vectorstores = []
-    for folder in ['.'] + extract_dirs:
-        for root, _, filenames in os.walk(folder):
-            if "index.faiss" in filenames:
-                db = FAISS.load_local(root, embedding_model, allow_dangerous_deserialization=True)
-                vectorstores.append(db)
-    return vectorstores
-
-
-def get_guideline_name(metadata: dict) -> str:
-    """
-    Ambil nama guideline dari metadata chunk.
-    Cuba beberapa nama key yang berkemungkinan digunakan oleh pipeline chunking anda.
-    Kalau citation dalam jawapan sentiasa keluar sebagai 'Guideline' (generik),
-    buka expander 'Debug' di bawah untuk lihat nama key sebenar dan tambah di sini.
-    """
-    for key in ("source_guideline", "source", "guideline", "guideline_id"):
-        value = metadata.get(key)
-        if value:
-            return value
-    return "Guideline"
-
-
-def get_section_name(metadata: dict) -> str:
-    for key in ("section", "section_header", "heading"):
-        value = metadata.get(key)
-        if value:
-            return value
-    return "General"
-
-
-@st.cache_resource
-def setup_and_load_faiss():
     """Ekstrak fail ZIP (jika ada) DAN imbas semua folder terus untuk cari index.faiss."""
-    # 1. Ekstrak mana-mana fail .zip jika wujud
     zip_files = [f for f in os.listdir('.') if f.endswith('.zip')]
     for z_file in zip_files:
         folder_name = z_file.replace('.zip', '').split(' ')[0]
@@ -87,7 +36,7 @@ def setup_and_load_faiss():
     )
 
     vectorstores = []
-    # 2. Imbas SELURUH direktori projek untuk mana-mana folder yang mengandungi 'index.faiss'
+    # Imbas SELURUH direktori untuk mana-mana folder yang mengandungi 'index.faiss'
     for root, dirs, filenames in os.walk('.'):
         if "index.faiss" in filenames:
             try:
@@ -98,8 +47,29 @@ def setup_and_load_faiss():
 
     return vectorstores
 
+
+def get_guideline_name(metadata: dict) -> str:
+    for key in ("source_guideline", "source", "guideline", "guideline_id"):
+        value = metadata.get(key)
+        if value:
+            return value
+    return "Guideline"
+
+
+def get_section_name(metadata: dict) -> str:
+    for key in ("section", "section_header", "heading"):
+        value = metadata.get(key)
+        if value:
+            return value
+    return "General"
+
+
+# Inisialisasi Vectorstore
+loaded_vectorstores = setup_and_load_faiss()
+
 if not loaded_vectorstores:
-    st.error("Tiada FAISS vectorstore berjaya dimuatkan. Semak fail ZIP dalam repo ini.")
+    st.error("Tiada FAISS vectorstore berjaya dimuatkan. Semak fail ZIP atau folder FAISS dalam repo ini.")
+    st.stop()
 
 user_query = st.text_area(
     "INSERT CLINICAL QUERY:",
@@ -112,19 +82,13 @@ if st.button("Generate Answer", type="primary"):
     else:
         with st.spinner("SEARCHING GUIDELINES AND GENERATING ANSWER..."):
             try:
-                # 1. Kumpul calon dari SEMUA vectorstore berserta skor jarak.
-                #    FAISS default guna L2 distance -> skor lebih RENDAH = lebih relevan.
                 scored_candidates = []
                 for db in loaded_vectorstores:
                     results = db.similarity_search_with_score(user_query, k=TOP_K_PER_STORE)
                     scored_candidates.extend(results)
 
-                # 2. Susun SEMUA calon secara global ikut skor (paling relevan dahulu).
-                #    Sebelum ni, kod ambil top-3 setiap store lalu potong ke 5 tanpa
-                #    re-rank -> chunk paling relevan dari store lewat boleh terbuang.
                 scored_candidates.sort(key=lambda pair: pair[1])
 
-                # 3. Buang duplicate content, KEKALKAN urutan relevance.
                 seen = set()
                 ranked_unique_docs = []
                 for doc, score in scored_candidates:
@@ -196,7 +160,7 @@ ANSWER:
                 api_key = st.secrets["GROQ_API_KEY"]
                 client = Groq(api_key=api_key)
                 completion = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",  # tukar sini kalau nak model Groq lain
+                    model="llama-3.3-70b-versatile",
                     messages=[{"role": "user", "content": system_prompt}],
                 )
                 answer_text = completion.choices[0].message.content
@@ -204,21 +168,17 @@ ANSWER:
                 st.subheader("OFFICIAL CLINICAL ANSWER")
                 st.markdown(answer_text)
 
-                # Simpan rekod ke log sesi (untuk RAGAS / analisis kemudian)
                 st.session_state.qa_log.append({
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "question": user_query,
                     "rag_response": answer_text,
                     "retrieved_contexts": " || ".join(doc.page_content for doc in top_docs),
-                    "ground_truth": "",  # isi manual kemudian dalam Excel/CSV
+                    "ground_truth": "",
                 })
 
             except Exception as e:
                 st.error(f"Ralat berlaku: {str(e)}")
 
-# ==================================================
-# Log Q&A Sesi Ini (untuk RAGAS / dataset penyelidikan)
-# ==================================================
 if st.session_state.qa_log:
     st.divider()
     st.subheader(f"📊 Log Soalan & Jawapan Sesi Ini ({len(st.session_state.qa_log)} rekod)")
@@ -231,8 +191,4 @@ if st.session_state.qa_log:
         data=csv_bytes,
         file_name="eval_vignettes.csv",
         mime="text/csv",
-    )
-    st.caption(
-        "Lajur `ground_truth` kosong — isi jawapan rujukan anda dalam Excel "
-        "selepas download, sebelum upload ke Colab untuk RAGAS scoring."
     )
