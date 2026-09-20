@@ -175,17 +175,36 @@ Provide a Markdown table summarizing all guidelines cited:
 USER QUERY: {user_query}
 ANSWER:
 """
-
-                api_key = st.secrets["GROQ_API_KEY"]
+#TUKAR SINI FOR GROQ MODEL
+api_key = st.secrets["GROQ_API_KEY"]
                 client = Groq(api_key=api_key)
-                completion = client.chat.completions.create(
-                    model="llama3-70b-8192",  # tukar sini kalau nak model Groq lain
-                    messages=[{"role": "user", "content": system_prompt}],
-                )
-                answer_text = completion.choices[0].message.content
-
-                st.subheader("OFFICIAL CLINICAL ANSWER")
-                st.markdown(answer_text)
+                
+                # Senarai model Groq mengikut keutamaan (dengan fallback)
+                candidate_models = [
+                    "llama-3.3-70b-versatile",
+                    "llama3-70b-8192",
+                    "llama-3.1-70b-versatile",
+                    "mixtral-8x7b-32768"
+                ]
+                
+                answer_text = None
+                last_error = None
+                
+                for model_id in candidate_models:
+                    try:
+                        completion = client.chat.completions.create(
+                            model=model_id,
+                            messages=[{"role": "user", "content": system_prompt}],
+                        )
+                        answer_text = completion.choices[0].message.content
+                        st.caption(f"🤖 Jawapan dijana menggunakan model: `{model_id}`")
+                        break  # Berjaya jana jawapan, keluar dari loop
+                    except Exception as err:
+                        last_error = err
+                        continue  # Cuba model seterusnya jika model semasa 404 / error
+                
+                if not answer_text:
+                    raise Exception(f"Gagal memanggil semua model Groq. Ralat terakhir: {last_error}")
 
                 # Simpan rekod ke log sesi (untuk RAGAS / analisis kemudian)
                 st.session_state.qa_log.append({
