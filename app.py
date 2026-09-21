@@ -206,4 +206,21 @@ ANSWER:
                 
                 if not answer_text:
                     raise Exception(f"Gagal memanggil semua model Groq. Ralat terakhir: {last_error}"
+# Log Q&A Sesi Ini
+if st.session_state.qa_log:
+    st.divider()
+    st.subheader(f"📊 Log Soalan & Jawapan Sesi Ini ({len(st.session_state.qa_log)} rekod)")
+    df_log = pd.DataFrame(st.session_state.qa_log)
+    st.dataframe(df_log, use_container_width=True)
+
+    csv_bytes = df_log.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="⬇️ Download Log sebagai CSV (eval_vignettes.csv)",
+        data=csv_bytes,
+        file_name="eval_vignettes.csv",
+        mime="text/csv",
+    )
+    st.caption(
+        "Lajur `ground_truth` kosong — isi jawapan rujukan anda dalam Excel "
+        "selepas download, sebelum upload ke RAGAS scoring."
     )
