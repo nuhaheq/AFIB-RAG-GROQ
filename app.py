@@ -200,7 +200,7 @@ ANSWER:
                         answer_text = completion.choices[0].message.content
                         st.caption(f"🤖 Jawapan dijana menggunakan model: `{model_id}`")
                         break  # Berjaya! Keluar dari loop
-                    except Exception as e:
+            except Exception as e:
                 st.error(f"Ralat berlaku: {str(e)}")
 
 # Log Q&A Sesi Ini
