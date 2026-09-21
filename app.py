@@ -200,12 +200,9 @@ ANSWER:
                         answer_text = completion.choices[0].message.content
                         st.caption(f"🤖 Jawapan dijana menggunakan model: `{model_id}`")
                         break  # Berjaya! Keluar dari loop
-                    except Exception as err:
-                        last_error = err
-                        continue  # Cuba model seterusnya jika 400/404
-                
-                if not answer_text:
-                    raise Exception(f"Gagal memanggil semua model Groq. Ralat terakhir: {last_error}"
+                    except Exception as e:
+                st.error(f"Ralat berlaku: {str(e)}")
+
 # Log Q&A Sesi Ini
 if st.session_state.qa_log:
     st.divider()
